@@ -1,0 +1,142 @@
+{
+  "model_name": "process_priority_classifier",
+  "version": "0.2.5-phase2.5",
+  "dataset": "prototype_synthetic_process_dataset",
+  "dataset_version": "v2-diverse-noprotectflag",
+  "training": "prototype-synthetic",
+  "warning": "PROTOTYPE ONLY: trained on synthetic data for a competition demo. Not production training data. Synthetic test accuracy does NOT transfer to real telemetry. Do not use for real process-management decisions.",
+  "implementation": "numpy-MLP, hand-built ONNX graph (Gemm/Relu/Softmax/ArgMax; scaler folded into layer 1, temperature folded into layer 3)",
+  "architecture": {
+    "type": "MLP",
+    "layers": [
+      11,
+      16,
+      8,
+      4
+    ],
+    "activation": "relu",
+    "optimizer": "adam"
+  },
+  "features": [
+    "cpu_norm",
+    "cpu_trend",
+    "mem_norm",
+    "io_rate",
+    "net_level",
+    "is_foreground",
+    "on_battery",
+    "user_activity",
+    "arch_native",
+    "is_emulated",
+    "hist_cpu"
+  ],
+  "classes": [
+    "PROTECTED",
+    "USER_IMPORTANT",
+    "FLEXIBLE",
+    "DEFERRABLE"
+  ],
+  "normalization": {
+    "type": "standard-scaler folded into ONNX graph",
+    "mean": [
+      0.1243041455745697,
+      0.5486737489700317,
+      0.11033467203378677,
+      0.29331502318382263,
+      0.27702295780181885,
+      0.18437500298023224,
+      0.520312488079071,
+      0.5033655762672424,
+      0.7901562452316284,
+      0.1340624988079071,
+      0.1299188733100891
+    ],
+    "scale": [
+      0.13132865726947784,
+      0.14453983306884766,
+      0.08928236365318298,
+      0.23188787698745728,
+      0.2618321478366852,
+      0.38779252767562866,
+      0.4995921552181244,
+      0.30829310417175293,
+      0.3637256324291229,
+      0.3407215178012848,
+      0.12430023401975632
+    ]
+  },
+  "calibration": {
+    "method": "temperature-scaling (NLL grid on held-out synthetic test set)",
+    "temperature": 2.0,
+    "nll_at_T": 0.3412
+  },
+  "ood_reference": {
+    "method": "nearest class centroid in standardized feature space; familiarity = exp(-0.5*(d/d_ref)^2), d_ref = median training distance",
+    "centroids": [
+      [
+        -0.3127308189868927,
+        -0.33504152297973633,
+        -0.6941562294960022,
+        -0.5257430076599121,
+        -0.8448805212974548,
+        -0.47544342279434204,
+        -0.02824103645980358,
+        -0.05555175989866257,
+        0.358622670173645,
+        -0.2332439422607422,
+        -0.3651832342147827
+      ],
+      [
+        0.5804570913314819,
+        0.04786999896168709,
+        0.9800530672073364,
+        0.03507180139422417,
+        0.42612379789352417,
+        1.4098519086837769,
+        -0.03445729985833168,
+        1.0816638469696045,
+        0.1919550895690918,
+        -0.058875493705272675,
+        0.6509891152381897
+      ],
+      [
+        0.38305333256721497,
+        0.6476253271102905,
+        0.1518520712852478,
+        0.5914487838745117,
+        1.057193636894226,
+        -0.4754434823989868,
+        0.11697115749120712,
+        -0.4676721692085266,
+        -0.12586809694766998,
+        0.21920542418956757,
+        0.3879142999649048
+      ],
+      [
+        -0.6643043756484985,
+        -0.3642868101596832,
+        -0.4484102129936218,
+        -0.09875256568193436,
+        -0.6463265419006348,
+        -0.47544366121292114,
+        -0.05464682728052139,
+        -0.5768588185310364,
+        -0.43616151809692383,
+        0.07642355561256409,
+        -0.6878562569618225
+      ]
+    ],
+    "d_ref": 2.5821871757507324,
+    "familiarity": "RBF kernel on centroid distance; extreme |z|>5 halves it",
+    "ood_threshold": 0.35
+  },
+  "confidence_threshold": 0.85,
+  "train_accuracy": 0.9322,
+  "test_accuracy": 0.8738,
+  "test_samples": 800,
+  "train_samples": 3200,
+  "train_seconds": 3.8,
+  "model_file": "models/process_classifier.onnx",
+  "model_size_kb": 1.9,
+  "opset": 12
+}

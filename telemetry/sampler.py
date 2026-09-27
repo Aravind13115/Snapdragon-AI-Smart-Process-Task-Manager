@@ -167,6 +167,7 @@ class Sampler:
                 "status": e.get("status", "?"), "username": e.get("username", "?"),
                 "arch": e.get("arch", "Unknown"),
                 "stale_s": round(time.time() - self.last_fast_ts, 1),
+                "create_time": e.get("create_time"),
                 "_io_total": e.get("io_total"),
             })
         key = {"cpu": lambda r: r["cpu_pct"],

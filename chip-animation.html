@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Compute Ecosystem — Chip Power-Up</title>
+<style>
+  /* ============================================================
+     RESET & BASE
+     ============================================================ */
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --qualcomm-red: #C41230;
+    --snapdragon-red: #E4002B;
+    --snapdragon-orange: #FF6B35;
+    --amd-red: #ED1C24;
+    --pcb-dark: #0a0e14;
+    --pcb-green: #0d1a12;
+    --copper: #b87333;
+    --gold: #d4a843;
+    --chip-black: #1a1a1a;
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255,255,255,0.5);
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #000;
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ============================================================
+     STAGE
+     ============================================================ */
+  #stage {
+    position: fixed; inset: 0;
+    background: #000;
+    overflow: hidden;
+  }
+
+  /* Vignette */
+  #stage::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 100%);
+    pointer-events: none;
+    z-index: 50;
+  }
+
+  /* ============================================================
+     CANVAS LAYERS
+     ============================================================ */
+  canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+  }
+  #canvas-motherboard { z-index: 1; }
+  #canvas-traces      { z-index: 2; }
+  #canvas-particles   { z-index: 3; }
+  #canvas-energy      { z-index: 4; }
+
+  /* ============================================================
+     CHIP CONTAINERS
+     ============================================================ */
+  .chip-scene {
+    position: absolute; inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.8s ease;
+  }
+  .chip-scene.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Chip package container */
+  .chip-package {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* The chip substrate (physical package) */
+  .chip-substrate {
+    position: relative;
+    background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 4px;
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,0.8),
+      0 4px 20px rgba(0,0,0,0.6),
+      inset 0 1px 0 rgba(255,255,255,0.05);
+    padding: 20px;
+  }
+
+  /* Chip die (the silicon) */
+  .chip-die {
+    position: relative;
+    background: linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 50%, #0a0a0a 100%);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 2px;
+    padding: 16px;
+    box-shadow:
+      inset 0 2px 4px rgba(0,0,0,0.5),
+      inset 0 -1px 0 rgba(255,255,255,0.03);
+  }
+
+  /* The actual logo image — EXACT, UNCHANGED */
+  .chip-die img {
+    display: block;
+    filter: brightness(0.3) saturate(0.5);
+    transition: filter 1.5s ease;
+  }
+  .chip-die.powered img {
+    filter: brightness(1) saturation(1);
+  }
+
+  /* Chip glow underneath */
+  .chip-glow {
+    position: absolute;
+    bottom: -20px; left: 50%;
+    transform: translateX(-50%);
+    width: 80%; height: 40px;
+    border-radius: 50%;
+    filter: blur(20px);
+    opacity: 0;
+    transition: opacity 1s ease;
+    pointer-events: none;
+  }
+  .chip-glow.qualcomm { background: radial-gradient(ellipse, rgba(196,18,48,0.4), transparent); }
+  .chip-glow.snapdragon { background: radial-gradient(ellipse, rgba(228,0,43,0.5), transparent); }
+  .chip-glow.amd { background: radial-gradient(ellipse, rgba(237,28,36,0.4), transparent); }
+  .chip-glow.active { opacity: 1; }
+
+  /* Chip label */
+  .chip-label {
+    position: absolute;
+    bottom: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    font-weight: 300;
+    letter-spacing: 8px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    white-space: nowrap;
+  }
+  .chip-label.visible { opacity: 1; }
+
+  /* Chip size variants */
+  .chip-qualcomm .chip-substrate { padding: 24px; }
+  .chip-qualcomm .chip-die img { width: 200px; height: auto; }
+
+  .chip-snapdragon .chip-substrate { padding: 20px; }
+  .chip-snapdragon .chip-die img { width: 120px; height: auto; }
+
+  .chip-amd .chip-substrate { padding: 24px; }
+  .chip-amd .chip-die img { width: 200px; height: auto; }
+
+  /* ============================================================
+     ON-SCREEN LABEL
+     ============================================================ */
+  .scene-label {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 20;
+    opacity: 0;
+    transition: opacity 1s ease;
+  }
+  .scene-label.visible { opacity: 1; }
+  .scene-label h2 {
+    font-size: 28px;
+    font-weight: 200;
+    letter-spacing: 12px;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+  .scene-label .sub {
+    font-size: 11px;
+    font-weight: 300;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  /* ============================================================
+     ECOSYSTEM FINAL
+     ============================================================ */
+  #ecosystem {
+    position: absolute; inset: 0;
+    z-index: 15;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1.5s ease;
+  }
+  #ecosystem.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .eco-chips {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 100px;
+    margin-bottom: 80px;
+  }
+
+  .eco-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 1s ease, transform 1s ease;
+  }
+  .eco-chip.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .eco-chip .chip-substrate { padding: 16px; }
+  .eco-chip .chip-die img { filter: brightness(1) saturate(1); }
+  .eco-chip.qualcomm .chip-die img { width: 140px; height: auto; }
+  .eco-chip.snapdragon .chip-die img { width: 80px; height: auto; }
+  .eco-chip.amd .chip-die img { width: 140px; height: auto; }
+
+  .eco-chip-label {
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .eco-title {
+    text-align: center;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 1.2s ease, transform 1.2s ease;
+  }
+  .eco-title.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .eco-title h1 {
+    font-size: 32px;
+    font-weight: 200;
+    letter-spacing: 10px;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+  }
+  .eco-title .subtitle {
+    font-size: 12px;
+    font-weight: 300;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  /* ============================================================
+     PROGRESS & UI
+     ============================================================ */
+  #progress-bar {
+    position: fixed;
+    bottom: 0; left: 0;
+    height: 2px;
+    background: linear-gradient(90deg,
+      var(--qualcomm-red),
+      var(--snapdragon-red),
+      var(--amd-red)
+    );
+    z-index: 100;
+    width: 0%;
+  }
+
+  #scene-indicator {
+    position: fixed;
+    top: 32px; right: 40px;
+    font-size: 11px;
+    font-weight: 300;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  #scene-indicator.visible { opacity: 1; }
+
+  /* ============================================================
+     FADE
+     ============================================================ */
+  #fade-overlay {
+    position: absolute; inset: 0;
+    background: #000;
+    z-index: 60;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 1.5s ease;
+  }
+  #fade-overlay.clear { opacity: 0; }
+  #fade-overlay.dark { opacity: 1; }
+
+  /* ============================================================
+     KEYFRAMES
+     ============================================================ */
+  @keyframes chipReveal {
+    0%   { opacity: 0; transform: scale(0.9); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.3; }
+    50%      { opacity: 0.8; }
+  }
+
+  @keyframes dataFlow {
+    0%   { stroke-dashoffset: 100; }
+    100% { stroke-dashoffset: 0; }
+  }
+
+  @keyframes nodeActivate {
+    0%   { opacity: 0; transform: scale(0); }
+    50%  { opacity: 1; transform: scale(1.2); }
+    100% { opacity: 0.6; transform: scale(1); }
+  }
+
+  @keyframes energyPulse {
+    0%   { opacity: 0; transform: scale(0.8); }
+    50%  { opacity: 0.6; transform: scale(1.1); }
+    100% { opacity: 0; transform: scale(1.3); }
+  }
+
+  /* ============================================================
+     RESPONSIVE
+     ============================================================ */
+  @media (max-width: 900px) {
+    .eco-chips { gap: 40px; }
+    .eco-title h1 { font-size: 22px; letter-spacing: 6px; }
+    .chip-qualcomm .chip-die img { width: 150px; }
+    .chip-snapdragon .chip-die img { width: 90px; }
+    .chip-amd .chip-die img { width: 150px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     STAGE
+     ============================================================ -->
+<div id="stage">
+
+  <!-- Canvas layers -->
+  <canvas id="canvas-motherboard"></canvas>
+  <canvas id="canvas-traces"></canvas>
+  <canvas id="canvas-particles"></canvas>
+  <canvas id="canvas-energy"></canvas>
+
+  <!-- ============================================================
+       SCENE 1: QUALCOMM
+       ============================================================ -->
+  <div class="chip-scene chip-qualcomm" id="scene-qualcomm">
+    <div class="chip-package">
+      <div class="chip-substrate">
+        <div class="chip-die" id="die-qualcomm">
+          <!-- EXACT QUALCOMM SVG — UNCHANGED -->
+          <img src="website/assets/logos/qualcomm.svg" alt="Qualcomm" width="200" height="120">
+        </div>
+      </div>
+      <div class="chip-glow qualcomm" id="glow-qualcomm"></div>
+      <div class="chip-label" id="label-qualcomm">Qualcomm</div>
+    </div>
+    <div class="scene-label" id="scene-label-qualcomm">
+      <h2>Qualcomm</h2>
+      <div class="sub">Snapdragon Platform &bull; AI Engine &bull; Edge Compute</div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SCENE 2: SNAPDRAGON
+       ============================================================ -->
+  <div class="chip-scene chip-snapdragon" id="scene-snapdragon">
+    <div class="chip-package">
+      <div class="chip-substrate">
+        <div class="chip-die" id="die-snapdragon">
+          <!-- EXACT SNAPDRAGON SVG — UNCHANGED -->
+          <img src="website/assets/logos/snapdragon.svg" alt="Snapdragon" width="120" height="120">
+        </div>
+      </div>
+      <div class="chip-glow snapdragon" id="glow-snapdragon"></div>
+      <div class="chip-label" id="label-snapdragon">Snapdragon</div>
+    </div>
+    <div class="scene-label" id="scene-label-snapdragon">
+      <h2>Snapdragon</h2>
+      <div class="sub">Fireball Architecture &bull; AI Acceleration &bull; Mobile Compute</div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SCENE 3: AMD
+       ============================================================ -->
+  <div class="chip-scene chip-amd" id="scene-amd">
+    <div class="chip-package">
+      <div class="chip-substrate">
+        <div class="chip-die" id="die-amd">
+          <!-- EXACT AMD SVG — UNCHANGED -->
+          <img src="website/assets/logos/amd.svg" alt="AMD" width="200" height="120">
+        </div>
+      </div>
+      <div class="chip-glow amd" id="glow-amd"></div>
+      <div class="chip-label" id="label-amd">AMD</div>
+    </div>
+    <div class="scene-label" id="scene-label-amd">
+      <h2>AMD</h2>
+      <div class="sub">Ryzen Architecture &bull; Compute Acceleration &bull; AI Processing</div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       FINAL: ECOSYSTEM
+       ============================================================ -->
+  <div id="ecosystem">
+    <div class="eco-chips">
+      <div class="eco-chip qualcomm" id="eco-qualcomm">
+        <div class="chip-substrate">
+          <div class="chip-die">
+            <img src="website/assets/logos/qualcomm.svg" alt="Qualcomm" width="200" height="120">
+          </div>
+        </div>
+        <span class="eco-chip-label">Qualcomm</span>
+      </div>
+      <div class="eco-chip snapdragon" id="eco-snapdragon">
+        <div class="chip-substrate">
+          <div class="chip-die">
+            <img src="website/assets/logos/snapdragon.svg" alt="Snapdragon" width="120" height="120">
+          </div>
+        </div>
+        <span class="eco-chip-label">Snapdragon</span>
+      </div>
+      <div class="eco-chip amd" id="eco-amd">
+        <div class="chip-substrate">
+          <div class="chip-die">
+            <img src="website/assets/logos/amd.svg" alt="AMD" width="200" height="120">
+          </div>
+        </div>
+        <span class="eco-chip-label">AMD</span>
+      </div>
+    </div>
+    <div class="eco-title" id="eco-title">
+      <h1>AI Compute Ecosystem</h1>
+      <div class="subtitle">Laptop Compute &bull; AI &bull; Edge &bull; Acceleration</div>
+    </div>
+  </div>
+
+  <!-- Fade overlay -->
+  <div id="fade-overlay"></div>
+
+</div>
+
+<!-- Progress bar -->
+<div id="progress-bar"></div>
+
+<!-- Scene indicator -->
+<div id="scene-indicator"></div>
+
+<!-- ============================================================
+     ANIMATION ENGINE
+     ============================================================ -->
+<script>
+(function() {
+  'use strict';
+
+  /* ============================================================
+     TIMING
+     ============================================================ */
+  const TIMING = {
+    QUALCOMM_START:    0,
+    QUALCOMM_END:      5000,
+    SNAPDRAGON_START:  5000,
+    SNAPDRAGON_END:   10000,
+    AMD_START:        10000,
+    AMD_END:          15000,
+    ECOSYSTEM_START: 15000,
+    ECOSYSTEM_END:   22000,
+    TOTAL_DURATION:  22000,
+  };
+
+  /* ============================================================
+     EASING
+     ============================================================ */
+  const Easing = {
+    easeOutCubic:  t => 1 - Math.pow(1 - t, 3),
+    easeInOutCubic:t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2,
+    easeOutQuart:  t => 1 - Math.pow(1-t, 4),
+    easeInOutQuart:t => t < 0.5 ? 8*t*t*t*t : 1 - Math.pow(-2*t+2,4)/2,
+    easeOutExpo:   t => t === 1 ? 1 : 1 - Math.pow(2, -10*t),
+    easeInOutSine: t => -(Math.cos(Math.PI*t) - 1) / 2,
+  };
+
+  const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+  const lerp  = (a, b, t) => a + (b - a) * t;
+
+  /* ============================================================
+     CANVAS SETUP
+     ============================================================ */
+  const canvasMB  = document.getElementById('canvas-motherboard');
+  const canvasTR  = document.getElementById('canvas-traces');
+  const canvasPT  = document.getElementById('canvas-particles');
+  const canvasEN  = document.getElementById('canvas-energy');
+  const ctxMB = canvasMB.getContext('2d');
+  const ctxTR = canvasTR.getContext('2d');
+  const ctxPT = canvasPT.getContext('2d');
+  const ctxEN = canvasEN.getContext('2d');
+
+  let W, H, DPR;
+  function resizeCanvases() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    [canvasMB, canvasTR, canvasPT, canvasEN].forEach(c => {
+      c.width  = W * DPR;
+      c.height = H * DPR;
+      c.style.width  = W + 'px';
+      c.style.height = H + 'px';
+      c.getContext('2d').setTransform(DPR, 0, 0, DPR, 0, 0);
+    });
+  }
+  resizeCanvases();
+  window.addEventListener('resize', resizeCanvases);
+
+  /* ============================================================
+     MOTHERBOARD RENDERER
+     ============================================================ */
+  class Motherboard {
+    constructor() {
+      this.components = [];
+      this.traces = [];
+      this.nodes = [];
+      this.generate();
+    }
+
+    generate() {
+      // Generate PCB traces
+      for (let i = 0; i < 80; i++) {
+        const horizontal = Math.random() < 0.5;
+        this.traces.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          length: 50 + Math.random() * 300,
+          horizontal,
+          width: 0.5 + Math.random() * 1.5,
+          active: false,
+          pulseOffset: Math.random() * Math.PI * 2,
+        });
+      }
+
+      // Generate components (capacitors, resistors, ICs)
+      for (let i = 0; i < 40; i++) {
+        this.components.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          w: 4 + Math.random() * 20,
+          h: 2 + Math.random() * 8,
+          type: Math.random() < 0.3 ? 'capacitor' : (Math.random() < 0.5 ? 'resistor' : 'ic'),
+          rotation: Math.random() * Math.PI * 2,
+        });
+      }
+
+      // Generate connection nodes
+      for (let i = 0; i < 60; i++) {
+        this.nodes.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          radius: 1 + Math.random() * 2,
+          active: false,
+          activationTime: 0,
+        });
+      }
+    }
+
+    draw(ctx, time, powerLevel) {
+      ctx.clearRect(0, 0, W, H);
+
+      // PCB base
+      const pcbGrad = ctx.createLinearGradient(0, 0, W, H);
+      pcbGrad.addColorStop(0, '#0a0e14');
+      pcbGrad.addColorStop(0.5, '#0d1218');
+      pcbGrad.addColorStop(1, '#080c10');
+      ctx.fillStyle = pcbGrad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Draw traces
+      this.traces.forEach(t => {
+        const pulse = Math.sin(time * 0.001 + t.pulseOffset) * 0.5 + 0.5;
+        const alpha = 0.08 + pulse * 0.06 * powerLevel;
+        ctx.strokeStyle = `rgba(184,115,51,${alpha})`;
+        ctx.lineWidth = t.width;
+        ctx.beginPath();
+        if (t.horizontal) {
+          ctx.moveTo(t.x - t.length/2, t.y);
+          ctx.lineTo(t.x + t.length/2, t.y);
+        } else {
+          ctx.moveTo(t.x, t.y - t.length/2);
+          ctx.lineTo(t.x, t.y + t.length/2);
+        }
+        ctx.stroke();
+      });
+
+      // Draw components
+      this.components.forEach(c => {
+        ctx.save();
+        ctx.translate(c.x, c.y);
+        ctx.rotate(c.rotation);
+        if (c.type === 'capacitor') {
+          ctx.fillStyle = 'rgba(40,40,40,0.8)';
+          ctx.fillRect(-c.w/2, -c.h/2, c.w, c.h);
+          ctx.fillStyle = 'rgba(60,60,60,0.6)';
+          ctx.fillRect(-c.w/2 + 1, -c.h/2 + 1, c.w - 2, c.h - 2);
+        } else if (c.type === 'resistor') {
+          ctx.fillStyle = 'rgba(30,30,30,0.8)';
+          ctx.fillRect(-c.w/2, -c.h/2, c.w, c.h);
+        } else {
+          ctx.fillStyle = 'rgba(20,20,20,0.9)';
+          ctx.fillRect(-c.w/2, -c.h/2, c.w, c.h);
+          ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+          ctx.lineWidth = 0.5;
+          ctx.strokeRect(-c.w/2, -c.h/2, c.w, c.h);
+        }
+        ctx.restore();
+      });
+
+      // Draw nodes
+      this.nodes.forEach(n => {
+        if (n.active) {
+          const age = time - n.activationTime;
+          const alpha = Math.max(0, 0.6 - age * 0.001);
+          ctx.fillStyle = `rgba(212,168,67,${alpha})`;
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.fillStyle = 'rgba(212,168,67,0.15)';
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+    }
+
+    activateNodesNear(cx, cy, radius, time) {
+      this.nodes.forEach(n => {
+        const dx = n.x - cx;
+        const dy = n.y - cy;
+        if (Math.sqrt(dx*dx + dy*dy) < radius) {
+          n.active = true;
+          n.activationTime = time;
+        }
+      });
+    }
+  }
+
+  /* ============================================================
+     ELECTRICAL PULSE SYSTEM
+     ============================================================ */
+  class ElectricalPulses {
+    constructor() {
+      this.pulses = [];
+    }
+
+    spawn(fromX, fromY, toX, toY, color, speed) {
+      this.pulses.push({
+        fromX, fromY, toX, toY,
+        x: fromX, y: fromY,
+        color,
+        speed: speed || 2,
+        progress: 0,
+        trail: [],
+      });
+    }
+
+    update(dt) {
+      for (let i = this.pulses.length - 1; i >= 0; i--) {
+        const p = this.pulses[i];
+        p.progress += p.speed * dt * 0.001;
+        p.x = lerp(p.fromX, p.toX, p.progress);
+        p.y = lerp(p.fromY, p.toY, p.progress);
+        p.trail.push({ x: p.x, y: p.y });
+        if (p.trail.length > 20) p.trail.shift();
+        if (p.progress >= 1) this.pulses.splice(i, 1);
+      }
+    }
+
+    draw(ctx) {
+      this.pulses.forEach(p => {
+        // Trail
+        for (let i = 1; i < p.trail.length; i++) {
+          const alpha = (i / p.trail.length) * 0.5;
+          ctx.strokeStyle = p.color.replace(')', `,${alpha})`).replace('rgb', 'rgba');
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(p.trail[i-1].x, p.trail[i-1].y);
+          ctx.lineTo(p.trail[i].x, p.trail[i].y);
+          ctx.stroke();
+        }
+        // Head
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+  }
+
+  /* ============================================================
+     PARTICLE SYSTEM
+     ============================================================ */
+  class Particles {
+    constructor() {
+      this.particles = [];
+    }
+
+    spawn(x, y, color, count) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 0.5 + Math.random() * 2;
+        this.particles.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          size: 0.5 + Math.random() * 1.5,
+          life: 1,
+          decay: 0.005 + Math.random() * 0.01,
+          color,
+        });
+      }
+    }
+
+    update(dt) {
+      for (let i = this.particles.length - 1; i >= 0; i--) {
+        const p = this.particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.life -= p.decay * dt;
+        if (p.life <= 0) this.particles.splice(i, 1);
+      }
+    }
+
+    draw(ctx) {
+      this.particles.forEach(p => {
+        ctx.fillStyle = p.color.replace(')', `,${p.life * 0.6})`).replace('rgb', 'rgba');
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+  }
+
+  /* ============================================================
+     ENERGY RINGS
+     ============================================================ */
+  class EnergyRings {
+    constructor() {
+      this.rings = [];
+    }
+
+    spawn(x, y, color, maxRadius) {
+      this.rings.push({
+        x, y,
+        radius: 0,
+        maxRadius: maxRadius || 100,
+        color,
+        speed: 1 + Math.random() * 0.5,
+        life: 1,
+      });
+    }
+
+    update(dt) {
+      for (let i = this.rings.length - 1; i >= 0; i--) {
+        const r = this.rings[i];
+        r.radius += r.speed * dt * 0.1;
+        r.life = 1 - (r.radius / r.maxRadius);
+        if (r.life <= 0) this.rings.splice(i, 1);
+      }
+    }
+
+    draw(ctx) {
+      this.rings.forEach(r => {
+        ctx.strokeStyle = r.color.replace(')', `,${r.life * 0.4})`).replace('rgb', 'rgba');
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+    }
+  }
+
+  /* ============================================================
+     INITIALIZE
+     ============================================================ */
+  const motherboard = new Motherboard();
+  const pulses = new ElectricalPulses();
+  const particles = new Particles();
+  const rings = new EnergyRings();
+
+  /* ============================================================
+     DOM REFS
+     ============================================================ */
+  const fadeOverlay  = document.getElementById('fade-overlay');
+  const progressBar  = document.getElementById('progress-bar');
+  const sceneIndicator = document.getElementById('scene-indicator');
+
+  const sceneQualcomm  = document.getElementById('scene-qualcomm');
+  const sceneSnapdragon = document.getElementById('scene-snapdragon');
+  const sceneAMD        = document.getElementById('scene-amd');
+  const ecosystem       = document.getElementById('ecosystem');
+
+  const dieQualcomm  = document.getElementById('die-qualcomm');
+  const dieSnapdragon = document.getElementById('die-snapdragon');
+  const dieAMD        = document.getElementById('die-amd');
+
+  const glowQualcomm  = document.getElementById('glow-qualcomm');
+  const glowSnapdragon = document.getElementById('glow-snapdragon');
+  const glowAMD        = document.getElementById('glow-amd');
+
+  const labelQualcomm  = document.getElementById('label-qualcomm');
+  const labelSnapdragon = document.getElementById('label-snapdragon');
+  const labelAMD        = document.getElementById('label-amd');
+
+  const sceneLabelQualcomm  = document.getElementById('scene-label-qualcomm');
+  const sceneLabelSnapdragon = document.getElementById('scene-label-snapdragon');
+  const sceneLabelAMD        = document.getElementById('scene-label-amd');
+
+  const ecoQualcomm  = document.getElementById('eco-qualcomm');
+  const ecoSnapdragon = document.getElementById('eco-snapdragon');
+  const ecoAMD        = document.getElementById('eco-amd');
+  const ecoTitle      = document.getElementById('eco-title');
+
+  /* ============================================================
+     SCENE MANAGEMENT
+     ============================================================ */
+  let currentScene = 'none';
+  let sceneTime = 0;
+
+  function setScene(scene) {
+    if (currentScene === scene) return;
+    currentScene = scene;
+    sceneTime = 0;
+
+    // Hide all scenes
+    [sceneQualcomm, sceneSnapdragon, sceneAMD].forEach(s => s.classList.remove('active'));
+    ecosystem.classList.remove('active');
+    [dieQualcomm, dieSnapdragon, dieAMD].forEach(d => d.classList.remove('powered'));
+    [glowQualcomm, glowSnapdragon, glowAMD].forEach(g => g.classList.remove('active'));
+    [labelQualcomm, labelSnapdragon, labelAMD].forEach(l => l.classList.remove('visible'));
+    [sceneLabelQualcomm, sceneLabelSnapdragon, sceneLabelAMD].forEach(l => l.classList.remove('visible'));
+    [ecoQualcomm, ecoSnapdragon, ecoAMD].forEach(e => e.classList.remove('visible'));
+    ecoTitle.classList.remove('visible');
+
+    switch(scene) {
+      case 'qualcomm':
+        sceneQualcomm.classList.add('active');
+        sceneIndicator.textContent = 'Scene 1 — Qualcomm';
+        sceneIndicator.classList.add('visible');
+        // Power-up sequence
+        setTimeout(() => {
+          glowQualcomm.classList.add('active');
+          motherboard.activateNodesNear(W/2, H/2, 200, performance.now());
+        }, 500);
+        setTimeout(() => {
+          dieQualcomm.classList.add('powered');
+          pulses.spawn(W/2 - 200, H/2, W/2, H/2, 'rgb(196,18,48)', 3);
+          pulses.spawn(W/2 + 200, H/2, W/2, H/2, 'rgb(196,18,48)', 3);
+        }, 1200);
+        setTimeout(() => {
+          labelQualcomm.classList.add('visible');
+          sceneLabelQualcomm.classList.add('visible');
+          rings.spawn(W/2, H/2, 'rgb(196,18,48)', 150);
+          particles.spawn(W/2, H/2, 'rgb(196,18,48)', 30);
+        }, 2000);
+        setTimeout(() => {
+          rings.spawn(W/2, H/2, 'rgb(196,18,48)', 200);
+        }, 3000);
+        break;
+
+      case 'snapdragon':
+        sceneSnapdragon.classList.add('active');
+        sceneIndicator.textContent = 'Scene 2 — Snapdragon';
+        setTimeout(() => {
+          glowSnapdragon.classList.add('active');
+          motherboard.activateNodesNear(W/2, H/2, 200, performance.now());
+        }, 400);
+        setTimeout(() => {
+          dieSnapdragon.classList.add('powered');
+          pulses.spawn(W/2 - 150, H/2, W/2, H/2, 'rgb(228,0,43)', 4);
+          pulses.spawn(W/2 + 150, H/2, W/2, H/2, 'rgb(255,107,53)', 4);
+          pulses.spawn(W/2, H/2 - 150, W/2, H/2, 'rgb(255,215,0)', 4);
+        }, 1000);
+        setTimeout(() => {
+          labelSnapdragon.classList.add('visible');
+          sceneLabelSnapdragon.classList.add('visible');
+          rings.spawn(W/2, H/2, 'rgb(228,0,43)', 120);
+          rings.spawn(W/2, H/2, 'rgb(255,107,53)', 100);
+          particles.spawn(W/2, H/2, 'rgb(228,0,43)', 40);
+        }, 1800);
+        setTimeout(() => {
+          rings.spawn(W/2, H/2, 'rgb(255,107,53)', 180);
+          particles.spawn(W/2, H/2, 'rgb(255,107,53)', 20);
+        }, 2800);
+        break;
+
+      case 'amd':
+        sceneAMD.classList.add('active');
+        sceneIndicator.textContent = 'Scene 3 — AMD';
+        setTimeout(() => {
+          glowAMD.classList.add('active');
+          motherboard.activateNodesNear(W/2, H/2, 200, performance.now());
+        }, 400);
+        setTimeout(() => {
+          dieAMD.classList.add('powered');
+          pulses.spawn(W/2 - 200, H/2, W/2, H/2, 'rgb(237,28,36)', 3);
+          pulses.spawn(W/2 + 200, H/2, W/2, H/2, 'rgb(237,28,36)', 3);
+          pulses.spawn(W/2, H/2 - 200, W/2, H/2, 'rgb(255,107,53)', 3);
+        }, 1000);
+        setTimeout(() => {
+          labelAMD.classList.add('visible');
+          sceneLabelAMD.classList.add('visible');
+          rings.spawn(W/2, H/2, 'rgb(237,28,36)', 140);
+          particles.spawn(W/2, H/2, 'rgb(237,28,36)', 35);
+        }, 1800);
+        setTimeout(() => {
+          rings.spawn(W/2, H/2, 'rgb(255,107,53)', 160);
+        }, 2600);
+        break;
+
+      case 'ecosystem':
+        sceneIndicator.textContent = 'AI Compute Ecosystem';
+        ecosystem.classList.add('active');
+        setTimeout(() => ecoQualcomm.classList.add('visible'), 400);
+        setTimeout(() => ecoSnapdragon.classList.add('visible'), 700);
+        setTimeout(() => ecoAMD.classList.add('visible'), 1000);
+        setTimeout(() => ecoTitle.classList.add('visible'), 1600);
+        break;
+
+      case 'fade':
+        fadeOverlay.classList.add('dark');
+        break;
+    }
+  }
+
+  /* ============================================================
+     MAIN LOOP
+     ============================================================ */
+  let lastTime = performance.now();
+  let elapsed = 0;
+
+  function tick(now) {
+    const rawDt = now - lastTime;
+    lastTime = now;
+    const dt = Math.min(rawDt, 50);
+    elapsed += rawDt;
+
+    // Progress
+    const progress = (elapsed / TIMING.TOTAL_DURATION) * 100;
+    progressBar.style.width = progress + '%';
+
+    // Scene transitions
+    if (elapsed >= TIMING.ECOSYSTEM_END) {
+      setScene('fade');
+    } else if (elapsed >= TIMING.ECOSYSTEM_START) {
+      setScene('ecosystem');
+    } else if (elapsed >= TIMING.AMD_START) {
+      setScene('amd');
+    } else if (elapsed >= TIMING.SNAPDRAGON_START) {
+      setScene('snapdragon');
+    } else if (elapsed >= TIMING.QUALCOMM_START) {
+      setScene('qualcomm');
+    }
+
+    // Clear canvases
+    ctxMB.clearRect(0, 0, W, H);
+    ctxTR.clearRect(0, 0, W, H);
+    ctxPT.clearRect(0, 0, W, H);
+    ctxEN.clearRect(0, 0, W, H);
+
+    // Calculate power level based on scene
+    let powerLevel = 0;
+    if (elapsed >= TIMING.QUALCOMM_START && elapsed < TIMING.QUALCOMM_END) {
+      powerLevel = Easing.easeOutCubic((elapsed - TIMING.QUALCOMM_START) / 2000);
+    } else if (elapsed >= TIMING.SNAPDRAGON_START && elapsed < TIMING.SNAPDRAGON_END) {
+      powerLevel = Easing.easeOutCubic((elapsed - TIMING.SNAPDRAGON_START) / 2000);
+    } else if (elapsed >= TIMING.AMD_START && elapsed < TIMING.AMD_END) {
+      powerLevel = Easing.easeOutCubic((elapsed - TIMING.AMD_START) / 2000);
+    } else if (elapsed >= TIMING.ECOSYSTEM_START) {
+      powerLevel = 1;
+    }
+
+    // Draw motherboard
+    motherboard.draw(ctxMB, now, powerLevel);
+
+    // Update and draw effects
+    pulses.update(dt);
+    pulses.draw(ctxTR);
+
+    particles.update(dt);
+    particles.draw(ctxPT);
+
+    rings.update(dt);
+    rings.draw(ctxEN);
+
+    // Continuous ambient particles during active scenes
+    if (elapsed >= TIMING.QUALCOMM_START && elapsed < TIMING.ECOSYSTEM_END) {
+      if (Math.random() < 0.1) {
+        const cx = W/2 + (Math.random() - 0.5) * 300;
+        const cy = H/2 + (Math.random() - 0.5) * 300;
+        particles.spawn(cx, cy, 'rgb(255,255,255)', 1);
+      }
+    }
+
+    sceneTime += dt;
+    requestAnimationFrame(tick);
+  }
+
+  /* ============================================================
+     START
+     ============================================================ */
+  function start() {
+    setTimeout(() => fadeOverlay.classList.add('clear'), 100);
+    requestAnimationFrame(tick);
+  }
+
+  start();
+
+})();
+</script>
+</body>
+</html>

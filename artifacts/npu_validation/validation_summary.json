@@ -1,0 +1,37 @@
+{
+  "timestamp": "2026-09-26T13:18:13",
+  "local": {
+    "model": {
+      "file": "models/process_classifier.onnx",
+      "size_kb": 1.9,
+      "opset": 12,
+      "inputs": [
+        [
+          11
+        ]
+      ],
+      "outputs": [
+        [
+          4
+        ]
+      ],
+      "ops": [
+        "Gemm",
+        "Relu",
+        "Softmax",
+        "ArgMax"
+      ],
+      "dtype": "float32"
+    },
+    "metadata_version": "0.2.5-phase2.5",
+    "features_ok": true,
+    "classes_ok": true,
+    "cpu_latency_ms": 0.03700000524986535,
+    "status": "LOCAL_CPU_VERIFIED"
+  },
+  "hub": {
+    "status": "BLOCKED",
+    "reason": "qai-hub not installed in this interpreter (isolated venv prepared separately); configure an API token via `qai-hub configure` \u2014 never commit it."
+  },
+  "elapsed_s": 0.3
+}

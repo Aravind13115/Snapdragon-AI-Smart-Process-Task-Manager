@@ -1,40 +1,79 @@
+# Environment / secrets
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.pfx
+
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
-*.egg
+.Python
+.venv/
+venv/
+env/
+ENV/
 *.egg-info/
 dist/
 build/
-.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
-# Virtual environments
-venv/
-.venv/
-env/
-ENV/
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.next/
+.nuxt/
+.vuepress/dist/
 
-# IDEs and editors
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# OS
-.DS_Store
-Thumbs.db
-desktop.ini
+# Logs (may contain sensitive paths)
+logs/*.log
+logs/*.jsonl.tmp
 
-# Project specific
-logs/
-artifacts/
-models/
-website_src_snapshot.json
-*.log
+# Qualcomm AI Hub local auth (NEVER commit)
+.qai_hub/
+qai_hub_config.json
+qai_hub_token*
 
-# Environment and secrets
-.env
-.env.local
-*.pem
+# Model artifacts that are large or machine-specific
+artifacts/npu_validation/qnn_target_model/*.dlc
+
+# Temporary / cache
+*.tmp
+*.bak
+*.swp
+*~
+.cache/
+tmp/
+temp/
+
+# Coverage / test reports
+htmlcov/
+.coverage
+coverage.xml
+*.cover
+
+# Compiled docs
+*.pdf
+!MODEL_ARCHITECTURE.pdf

@@ -1,5 +1,5 @@
 /* ============================================================
-   Snapdragon AI Smart Process Manager — Competition Showcase
+   Snapdragon AI Smart Process Manager — Live Mode
    Premium dark theme with Snapdragon-inspired red accent
    ============================================================ */
 
@@ -54,7 +54,7 @@ body.light-theme {
 }
 
 /* Theme transition */
-body, .card, .glass, .topnav, .modebar, table, th, td, input, select, button, .dnode, .npu-node, .tl-content, .sp-step, .arch-box {
+body, .card, .glass, .topnav, .livebar, table, th, td, input, select, button, .dnode, .npu-node, .tl-content, .sp-step, .arch-box {
   transition: background-color var(--transition), color var(--transition), border-color var(--transition), box-shadow var(--transition);
 }
 
@@ -71,32 +71,63 @@ body {
 a { color: var(--blue); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-/* ============ MODE BAR ============ */
-.modebar {
+/* ============ LIVE BAR ============ */
+.livebar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
   padding: 8px 20px;
-  background: #3a2400;
-  color: #ffd77a;
+  background: rgba(10,12,18,.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--acc);
   font-size: 13px;
-  letter-spacing: .04em;
 }
-body.light-theme .modebar { background: #fff3cd; color: #856404; }
-.modeswitch button { cursor: pointer; }
-.modeswitch button {
-  background: transparent;
-  color: #ffd77a;
-  border: 1px solid #ffd77a;
-  border-radius: 6px;
-  padding: 4px 10px;
-  margin-left: 6px;
+body.light-theme .livebar { background: rgba(245,246,248,.95); }
+.livebar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.live-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ok);
+  animation: livePulse 1.5s ease-in-out infinite;
+}
+@keyframes livePulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(63,185,80,.4); opacity: 1; }
+  50% { box-shadow: 0 0 16px rgba(63,185,80,.8); opacity: .7; }
+}
+.live-text {
+  font-weight: 800;
+  letter-spacing: .08em;
+  color: var(--ok);
+  font-size: 14px;
+}
+.livebar-center {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.live-stat {
+  white-space: nowrap;
   font-size: 12px;
-  font-family: var(--font);
 }
-.modeswitch button.on { background: #ffd77a; color: #201400; font-weight: 700; }
+.livebar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.conn-connected { color: var(--ok); font-weight: 600; }
+.conn-reconnecting { color: var(--warn); font-weight: 600; }
+.conn-disconnected { color: var(--acc); font-weight: 600; }
 
 /* ============ NAVIGATION ============ */
 .topnav {
@@ -312,32 +343,6 @@ button { cursor: pointer; font-family: var(--font); }
 }
 .drow span.hl { border-color: var(--acc); color: var(--acc2); }
 
-/* ============ TOUR ============ */
-.tourbar {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  margin-top: 20px;
-  flex-wrap: wrap;
-  padding: 14px 18px;
-}
-.tour-progress {
-  flex: 1;
-  min-width: 120px;
-  height: 4px;
-  background: var(--line);
-  border-radius: 4px;
-  overflow: hidden;
-}
-.tour-progress-fill {
-  height: 100%;
-  background: var(--acc);
-  border-radius: 4px;
-  transition: width .5s ease;
-  width: 0%;
-}
-.tourstart { margin-top: 14px; text-align: center; }
-
 /* ============ CARDS ============ */
 .cards2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; }
 .cards3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
@@ -386,6 +391,33 @@ th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--lin
 th { color: var(--dim); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; background: var(--card2); }
 tr:hover td { background: var(--panel); }
 td { transition: background var(--transition); }
+
+/* Process row animations */
+tr.process-row { transition: all .4s ease; }
+tr.process-row.new-row { animation: rowEnter .6s ease; }
+@keyframes rowEnter {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+tr.process-row.foreground-row td { background: rgba(228,0,43,.04); }
+tr.process-row.foreground-row td:first-child { border-left: 3px solid var(--acc); }
+
+/* Cell highlight animations */
+td.cell-highlight-up { animation: cellUp .8s ease; }
+td.cell-highlight-down { animation: cellDown .8s ease; }
+td.cell-highlight-change { animation: cellChange .8s ease; }
+@keyframes cellUp {
+  0% { background: rgba(63,185,80,.25); }
+  100% { background: transparent; }
+}
+@keyframes cellDown {
+  0% { background: rgba(228,0,43,.25); }
+  100% { background: transparent; }
+}
+@keyframes cellChange {
+  0% { background: rgba(88,166,255,.25); }
+  100% { background: transparent; }
+}
 
 /* ============ PIPELINE ============ */
 .pipe { display: flex; gap: 6px; flex-wrap: wrap; margin: 16px 0; }
@@ -468,6 +500,11 @@ td { transition: background var(--transition); }
   border-radius: 4px;
   padding: 3px 8px;
 }
+.safety-count {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 8px 0;
+}
 .safety-pipeline {
   display: flex;
   align-items: center;
@@ -516,6 +553,9 @@ td { transition: background var(--transition); }
 
 /* ============ NPU ============ */
 .npu-jobs { margin: 20px 0; }
+.npu-split { margin: 20px 0; }
+.npu-local { border-left: 3px solid var(--ok); }
+.npu-validated { border-left: 3px solid var(--blue); }
 .job-card { position: relative; padding-top: 24px; }
 .job-status {
   position: absolute;
@@ -600,6 +640,61 @@ td { transition: background var(--transition); }
 .about-card { margin: 16px 0; }
 .about-facts { margin: 16px 0; }
 
+/* ============ LIVE EVENTS ============ */
+.events-card { max-height: 200px; overflow-y: auto; }
+.events-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+.event-item {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--line);
+  animation: eventIn .4s ease;
+}
+@keyframes eventIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.event-time {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--dim);
+  margin-right: 8px;
+}
+.event-type {
+  font-weight: 600;
+  margin-right: 6px;
+}
+.event-type.process { color: var(--blue); }
+.event-type.foreground { color: var(--acc2); }
+.event-type.ai { color: var(--purple); }
+.event-type.safety { color: var(--warn); }
+.event-type.recommendation { color: var(--ok); }
+.event-type.monitoring { color: var(--dim); }
+
+/* ============ FOREGROUND CARD ============ */
+.fg-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.fg-label {
+  background: var(--acc);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: .06em;
+}
+.fg-name {
+  font-size: 18px;
+  font-weight: 700;
+}
+
 /* ============ FOOTER ============ */
 footer {
   text-align: center;
@@ -648,6 +743,8 @@ vercel-speed-insights { display: none !important; }
   .footer-content { flex-direction: column; text-align: center; }
   .footer-legal { text-align: center; }
   table { min-width: 600px; }
+  .livebar { font-size: 11px; padding: 6px 12px; }
+  .livebar-center { gap: 8px; }
 }
 
 /* ============ SCROLLBAR ============ */
@@ -679,3 +776,1059 @@ vercel-speed-insights { display: none !important; }
   font-size: 18px;
 }
 .theme-toggle:hover { border-color: var(--acc); box-shadow: 0 0 16px rgba(228,0,43,.2); }
+
+/* ============ NUMBER TRANSITIONS ============ */
+.telemetry-value {
+  transition: color .3s ease;
+}
+.telemetry-value.flash-up { color: var(--ok); }
+.telemetry-value.flash-down { color: var(--acc2); }
+
+/* ============ SAFETY GATE ANIMATION ============ */
+.safety-gate {
+  position: relative;
+  overflow: hidden;
+}
+.safety-gate::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(228,0,43,.05), transparent);
+  animation: gateScan 3s ease-in-out infinite;
+}
+@keyframes gateScan {
+  0% { left: -100%; }
+  50% { left: 100%; }
+  100% { left: 100%; }
+}
+
+/* ============ AI WORKLOAD VISUAL ============ */
+.ai-workload-visual {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 12px 0;
+}
+.awv-step {
+  background: var(--card2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  transition: all .4s ease;
+}
+.awv-step.lit {
+  border-color: var(--acc);
+  box-shadow: 0 0 12px rgba(228,0,43,.2);
+  background: rgba(228,0,43,.06);
+}
+.awv-arrow {
+  color: var(--dim);
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* ============ PLAN CARD ============ */
+.plan-card {
+  border-left: 3px solid var(--warn);
+}
+.plan-item {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+.plan-item:last-child { border-bottom: none; }
+.plan-process {
+  font-weight: 600;
+  color: var(--acc2);
+}
+.plan-reason {
+  color: var(--dim);
+  font-size: 13px;
+}
+.plan-proposed {
+  font-size: 12px;
+  color: var(--warn);
+  margin-top: 2px;
+}
+
+/* ============================================================
+   CINEMATIC CHIP INTRO ANIMATION
+   ============================================================ */
+.chip-intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #000;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 1.5s ease;
+}
+.chip-intro-overlay.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+.chip-intro-overlay.skip {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.chip-intro-overlay canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.chip-intro-overlay #chip-canvas-mb { z-index: 1; }
+.chip-intro-overlay #chip-canvas-traces { z-index: 2; }
+.chip-intro-overlay #chip-canvas-particles { z-index: 3; }
+.chip-intro-overlay #chip-canvas-energy { z-index: 4; }
+
+.chip-scene-container {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease;
+}
+.chip-scene-container.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.chip-package {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.chip-substrate {
+  position: relative;
+  background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 4px;
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.8),
+    0 4px 20px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+  padding: 20px;
+}
+
+.chip-die {
+  position: relative;
+  background: linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 50%, #0a0a0a 100%);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 2px;
+  padding: 16px;
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,0.5),
+    inset 0 -1px 0 rgba(255,255,255,0.03);
+}
+
+.chip-die img {
+  display: block;
+  filter: brightness(0.3) saturate(0.5);
+  transition: filter 1.5s ease;
+}
+.chip-die.powered img {
+  filter: brightness(1) saturate(1);
+}
+
+.chip-glow {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 40px;
+  border-radius: 50%;
+  filter: blur(20px);
+  opacity: 0;
+  transition: opacity 1s ease;
+  pointer-events: none;
+}
+.chip-glow.qualcomm { background: radial-gradient(ellipse, rgba(196,18,48,0.4), transparent); }
+.chip-glow.snapdragon { background: radial-gradient(ellipse, rgba(228,0,43,0.5), transparent); }
+.chip-glow.amd { background: radial-gradient(ellipse, rgba(237,28,36,0.4), transparent); }
+.chip-glow.active { opacity: 1; }
+
+.chip-label {
+  margin-top: 28px;
+  font-size: 14px;
+  font-weight: 300;
+  letter-spacing: 8px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+.chip-label.visible { opacity: 1; }
+
+.chip-scene-label {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  z-index: 20;
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+.chip-scene-label.visible { opacity: 1; }
+.chip-scene-label h2 {
+  font-size: 28px;
+  font-weight: 200;
+  letter-spacing: 12px;
+  text-transform: uppercase;
+  color: #fff;
+  margin-bottom: 8px;
+}
+.chip-scene-label .sub {
+  font-size: 11px;
+  font-weight: 300;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+}
+
+.chip-qualcomm .chip-substrate { padding: 24px; }
+.chip-qualcomm .chip-die img { width: 200px; height: auto; }
+
+.chip-snapdragon .chip-substrate { padding: 20px; }
+.chip-snapdragon .chip-die img { width: 120px; height: auto; }
+
+.chip-amd .chip-substrate { padding: 24px; }
+.chip-amd .chip-die img { width: 200px; height: auto; }
+
+.chip-intro-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #C41230, #E4002B, #ED1C24);
+  z-index: 100;
+  width: 0%;
+  transition: width 0.1s linear;
+}
+
+.chip-intro-skip {
+  position: absolute;
+  bottom: 30px;
+  right: 40px;
+  z-index: 100;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.5);
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: var(--font);
+}
+.chip-intro-skip:hover {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.8);
+  border-color: rgba(255,255,255,0.3);
+}
+
+.chip-scene-indicator {
+  position: absolute;
+  top: 32px;
+  right: 40px;
+  font-size: 11px;
+  font-weight: 300;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.chip-scene-indicator.visible { opacity: 1; }
+
+.chip-eco-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.5s ease;
+}
+.chip-eco-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.chip-eco-chips {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 80px;
+  margin-bottom: 60px;
+}
+
+.chip-eco-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.chip-eco-chip.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.chip-eco-chip .chip-substrate { padding: 14px; }
+.chip-eco-chip .chip-die img { filter: brightness(1) saturate(1); }
+.chip-eco-chip.qualcomm .chip-die img { width: 120px; height: auto; }
+.chip-eco-chip.snapdragon .chip-die img { width: 70px; height: auto; }
+.chip-eco-chip.amd .chip-die img { width: 120px; height: auto; }
+
+.chip-eco-label {
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+}
+
+.chip-eco-title {
+  text-align: center;
+  opacity: 0;
+  transform: translateY(15px);
+  transition: opacity 1s ease, transform 1s ease;
+}
+.chip-eco-title.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.chip-eco-title h1 {
+  font-size: 28px;
+  font-weight: 200;
+  letter-spacing: 10px;
+  text-transform: uppercase;
+  color: #fff;
+  margin-bottom: 10px;
+}
+.chip-eco-title .subtitle {
+  font-size: 11px;
+  font-weight: 300;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+}
+
+.chip-intro-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 100%);
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* ============================================================
+   NEW UI ELEMENTS
+   ============================================================ */
+
+/* Mode Toggle */
+.mode-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.mode-btn {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text2);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.mode-btn.active {
+  background: var(--acc);
+  color: #fff;
+  border-color: var(--acc);
+}
+.mode-btn:hover:not(.active) {
+  border-color: var(--acc);
+  color: var(--acc);
+}
+
+/* Sort Controls */
+.sort-controls {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  margin-left: 12px;
+}
+.sort-controls .dim {
+  font-size: 12px;
+  margin-right: 4px;
+}
+
+/* Button States */
+.btn-loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+.btn-success {
+  border-color: var(--ok) !important;
+  color: var(--ok) !important;
+}
+.btn-error {
+  border-color: #f44336 !important;
+  color: #f44336 !important;
+}
+.btn-resumed {
+  border-color: var(--ok) !important;
+  color: var(--ok) !important;
+}
+
+/* Stale Data Indicator */
+.stale {
+  color: #ff9800 !important;
+  font-weight: 600;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal[hidden] {
+  display: none;
+}
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+}
+.modal-content {
+  position: relative;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 700px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text2);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+.modal-close:hover {
+  background: var(--bg3);
+  color: var(--text);
+}
+.modal-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.modal-tab {
+  padding: 6px 12px;
+  border: none;
+  background: none;
+  color: var(--text2);
+  cursor: pointer;
+  font-size: 13px;
+  border-radius: 4px;
+}
+.modal-tab.active {
+  background: var(--acc);
+  color: #fff;
+}
+.modal-tab:hover:not(.active) {
+  background: var(--bg3);
+}
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+.modal-pane {
+  display: none;
+}
+.modal-pane.active {
+  display: block;
+}
+.modal-pane p {
+  margin: 8px 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.modal-pane .dim {
+  font-size: 12px;
+}
+
+/* Performance Chart Container */
+#perf-chart, #top-procs-chart {
+  background: var(--bg);
+  border-radius: 8px;
+}
+
+/* Live vs Simulation indicator */
+.live-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #4caf50;
+  border-radius: 50%;
+  margin-right: 6px;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Connection status stale */
+.conn-reconnecting {
+  color: #ff9800;
+}
+.conn-disconnected {
+  color: #f44336;
+}
+.conn-connected {
+  color: #4caf50;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .mode-toggle {
+    flex-direction: column;
+  }
+  .sort-controls {
+    margin-left: 0;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .modal-content {
+    width: 95%;
+    max-height: 90vh;
+  }
+  .livebar-center {
+    display: none;
+  }
+}
+
+/* ============================================================
+   WINDOWS 11-INSPIRED STARTUP EXPERIENCE
+   ============================================================ */
+
+.win11-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: linear-gradient(135deg, #0a0e1a 0%, #0d1525 50%, #0a0e1a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: opacity 0.8s ease, visibility 0.8s ease;
+}
+.win11-intro.win11-fade-out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.win11-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(30, 60, 120, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(20, 50, 100, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(15, 30, 60, 0.2) 0%, transparent 70%);
+}
+
+.win11-particles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.win11-particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: rgba(100, 160, 255, 0.3);
+  border-radius: 50%;
+  animation: win11-float 8s ease-in-out infinite;
+}
+@keyframes win11-float {
+  0%, 100% { transform: translateY(0) translateX(0); opacity: 0.2; }
+  25% { transform: translateY(-20px) translateX(10px); opacity: 0.5; }
+  50% { transform: translateY(-10px) translateX(-5px); opacity: 0.3; }
+  75% { transform: translateY(-30px) translateX(15px); opacity: 0.4; }
+}
+
+.win11-cursor-light {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(80, 140, 255, 0.08) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: left 0.3s ease-out, top 0.3s ease-out;
+  z-index: 1;
+}
+
+.win11-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.5) 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Windows Logo */
+.win11-logo {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  z-index: 10;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.win11-logo.win11-visible {
+  opacity: 1;
+  transform: scale(1);
+}
+.win11-pane {
+  position: absolute;
+  width: 54px;
+  height: 54px;
+  background: linear-gradient(135deg, #4a9eff 0%, #2b7cd3 100%);
+  border-radius: 4px;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: opacity 0.4s ease, transform 0.4s ease, box-shadow 0.4s ease;
+  box-shadow: 0 0 20px rgba(74, 158, 255, 0.3);
+}
+.win11-pane.pane-tl { top: 0; left: 0; transition-delay: 0.1s; }
+.win11-pane.pane-tr { top: 0; right: 0; transition-delay: 0.2s; }
+.win11-pane.pane-bl { bottom: 0; left: 0; transition-delay: 0.3s; }
+.win11-pane.pane-br { bottom: 0; right: 0; transition-delay: 0.4s; }
+.win11-logo.win11-visible .win11-pane {
+  opacity: 1;
+  transform: scale(1);
+}
+.win11-logo-glow {
+  position: absolute;
+  inset: -20px;
+  background: radial-gradient(circle, rgba(74, 158, 255, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.6s ease 0.5s;
+}
+.win11-logo.win11-visible .win11-logo-glow {
+  opacity: 1;
+}
+
+/* Windows Environment */
+.win11-environment {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  pointer-events: none;
+}
+.win11-environment.win11-visible {
+  opacity: 1;
+}
+.win11-window {
+  position: absolute;
+  background: rgba(20, 30, 50, 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(100, 160, 255, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.win11-environment.win11-visible .win11-window {
+  opacity: 1;
+  transform: translateY(0);
+}
+.win11-win-1 {
+  width: 200px;
+  height: 140px;
+  top: 15%;
+  left: 10%;
+  transition-delay: 0.2s;
+}
+.win11-win-2 {
+  width: 180px;
+  height: 120px;
+  top: 20%;
+  right: 12%;
+  transition-delay: 0.4s;
+}
+.win11-win-3 {
+  width: 160px;
+  height: 100px;
+  bottom: 25%;
+  left: 15%;
+  transition-delay: 0.6s;
+}
+.win11-win-titlebar {
+  height: 24px;
+  background: rgba(30, 50, 80, 0.5);
+  border-bottom: 1px solid rgba(100, 160, 255, 0.05);
+}
+.win11-win-content {
+  padding: 8px;
+}
+.win11-taskbar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: rgba(15, 25, 45, 0.8);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(100, 160, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.6s ease 0.8s;
+}
+.win11-environment.win11-visible .win11-taskbar {
+  opacity: 1;
+}
+.win11-taskbar-item {
+  width: 24px;
+  height: 24px;
+  background: rgba(74, 158, 255, 0.2);
+  border-radius: 4px;
+}
+
+/* System Status */
+.win11-status {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.win11-status.win11-visible {
+  opacity: 1;
+}
+.win11-status-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(200, 220, 255, 0.7);
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.win11-status-item.win11-active {
+  opacity: 1;
+  transform: translateX(0);
+  color: rgba(255, 255, 255, 0.9);
+}
+.win11-status-item.win11-done {
+  opacity: 1;
+  transform: translateX(0);
+  color: rgba(100, 200, 150, 0.8);
+}
+.win11-status-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(100, 160, 255, 0.3);
+  position: relative;
+  transition: border-color 0.3s ease;
+}
+.win11-status-item.win11-active .win11-status-icon {
+  border-color: #4a9eff;
+  animation: win11-pulse 1.5s ease-in-out infinite;
+}
+.win11-status-item.win11-done .win11-status-icon {
+  border-color: #4caf50;
+  background: #4caf50;
+}
+.win11-status-item.win11-done .win11-status-icon::after {
+  content: '\2713';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #fff;
+}
+@keyframes win11-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(74, 158, 255, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(74, 158, 255, 0); }
+}
+
+/* Loading States */
+.win11-loading {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.win11-loading.win11-visible {
+  opacity: 1;
+}
+.win11-loading-text {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(150, 180, 220, 0.6);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Offline State */
+.win11-offline {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 15, 26, 0.95);
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.win11-offline.win11-visible {
+  opacity: 1;
+}
+.win11-offline h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ff6b6b;
+  margin: 0 0 8px 0;
+}
+.win11-offline p {
+  font-size: 14px;
+  color: rgba(200, 220, 255, 0.6);
+  margin: 0 0 24px 0;
+}
+.win11-offline-actions {
+  display: flex;
+  gap: 12px;
+}
+.win11-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.win11-btn-primary {
+  background: #4a9eff;
+  color: #fff;
+}
+.win11-btn-primary:hover {
+  background: #3a8eef;
+}
+.win11-btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.win11-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Title Reveal */
+.win11-title-reveal {
+  position: absolute;
+  inset: 0;
+  z-index: 18;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  pointer-events: none;
+}
+.win11-title-reveal.win11-visible {
+  opacity: 1;
+}
+.win11-title-reveal h1 {
+  font-size: 36px;
+  font-weight: 800;
+  color: #fff;
+  text-align: center;
+  margin: 0 0 12px 0;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+.win11-title-reveal h1 span {
+  font-size: 24px;
+  font-weight: 600;
+  color: rgba(200, 220, 255, 0.7);
+}
+.win11-subtitle {
+  font-size: 14px;
+  color: rgba(200, 220, 255, 0.5);
+  text-align: center;
+  margin: 0 0 24px 0;
+}
+.win11-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.win11-badge {
+  padding: 4px 10px;
+  background: rgba(74, 158, 255, 0.1);
+  border: 1px solid rgba(74, 158, 255, 0.2);
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(150, 200, 255, 0.8);
+  letter-spacing: 0.5px;
+}
+
+/* Skip Button */
+.win11-skip {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  z-index: 25;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0;
+}
+.win11-skip.win11-visible {
+  opacity: 1;
+}
+.win11-skip:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .win11-intro,
+  .win11-logo,
+  .win11-pane,
+  .win11-environment,
+  .win11-window,
+  .win11-status,
+  .win11-status-item,
+  .win11-loading,
+  .win11-title-reveal,
+  .win11-cursor-light {
+    transition: opacity 0.3s ease !important;
+    transform: none !important;
+  }
+  .win11-particle {
+    animation: none !important;
+    opacity: 0.2;
+  }
+  .win11-status-item.win11-active .win11-status-icon {
+    animation: none !important;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .win11-logo {
+    width: 80px;
+    height: 80px;
+  }
+  .win11-pane {
+    width: 36px;
+    height: 36px;
+  }
+  .win11-win-1,
+  .win11-win-2,
+  .win11-win-3 {
+    display: none;
+  }
+  .win11-title-reveal h1 {
+    font-size: 24px;
+  }
+  .win11-title-reveal h1 span {
+    font-size: 16px;
+  }
+  .win11-status {
+    bottom: 60px;
+  }
+}

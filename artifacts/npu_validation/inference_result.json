@@ -1,0 +1,45 @@
+{
+  "cpu_reference": {
+    "protected": {
+      "label": "PROTECTED",
+      "probabilities": [
+        0.8387,
+        0.0,
+        0.0147,
+        0.1465
+      ],
+      "confidence": 0.8387
+    },
+    "foreground": {
+      "label": "USER_IMPORTANT",
+      "probabilities": [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      "confidence": 1.0
+    },
+    "flexible": {
+      "label": "FLEXIBLE",
+      "probabilities": [
+        0.0,
+        0.0191,
+        0.9809,
+        0.0
+      ],
+      "confidence": 0.9809
+    },
+    "deferrable": {
+      "label": "DEFERRABLE",
+      "probabilities": [
+        0.0009,
+        0.0,
+        0.0051,
+        0.994
+      ],
+      "confidence": 0.994
+    }
+  },
+  "cpu_latency_ms": 0.03700000524986535
+}

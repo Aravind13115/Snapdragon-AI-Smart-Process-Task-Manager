@@ -168,7 +168,7 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         u = urlparse(self.path)
         if u.path == "/":
-            self.path = "/dashboard.html"
+            self.path = "/index.html"
             return super().do_GET()
         if u.path == "/api/platform":
             return _send(self, _platform)
@@ -331,6 +331,70 @@ class Handler(SimpleHTTPRequestHandler):
             return _send(self, planner.build_plan(
                 system_stats.snapshot(),
                 _cached_processes(limit=25, sort="cpu")))
+        if u.path == "/api/health":
+            return _send(self, {
+                "status": "ok",
+                "app": config.APP_NAME,
+                "version": config.VERSION,
+                "timestamp": time.time(),
+                "live": True,
+                "emergency_stop": EMERGENCY_STOP,
+                "ai_source": _ai_source,
+                "backend": _backend["selected_backend"],
+            })
+        if u.path == "/api/live":
+            # Aggregated safe read-only snapshot for the frontend.
+            # Calls existing functions internally; no duplicated business logic.
+            try:
+                stats = system_stats.snapshot()
+            except Exception:
+                stats = {"error": "telemetry unavailable", "simulated": False}
+            try:
+                procs = _cached_processes(limit=50, sort="cpu")
+            except Exception:
+                procs = {"error": "process enumeration unavailable", "rows": [],
+                         "count": 0, "simulated": False}
+            try:
+                from ai import recommend as _rec_live
+                from ai.dataset import FEATURES as _FEATS_live
+                st_live = _classifier.status()
+                ai_st = {
+                    "simulated": False,
+                    "model_loaded": bool(st_live.get("model_loaded")),
+                    "model_name": "process priority_classifier",
+                    "model_format": "ONNX",
+                    "model_size_kb": st_live.get("model_size_kb"),
+                    "selected_backend": _backend["selected_backend"],
+                    "provider": _backend["provider"],
+                    "classes": st_live.get("classes"),
+                    "features": _FEATS_live,
+                    "confidence_threshold": _rec_live.THRESHOLD,
+                    "last_latency_ms": st_live.get("last_latency_ms"),
+                    "ai_source": _ai_source,
+                }
+            except Exception:
+                ai_st = {"error": "AI status unavailable", "simulated": False}
+            try:
+                saf = safety_engine.status()
+            except Exception:
+                saf = {"error": "safety engine unavailable", "simulated": False}
+            try:
+                pl = planner.build_plan(stats, procs)
+            except Exception:
+                pl = {"error": "plan unavailable", "suggestions": [], "simulated": False}
+            return _send(self, {
+                "simulated": False,
+                "timestamp": time.time(),
+                "platform": _platform,
+                "stats": stats,
+                "processes": procs,
+                "ai": ai_st,
+                "safety": saf,
+                "plan": pl,
+                "ai_source": _ai_source,
+                "backend": _backend,
+                "emergency_stop": EMERGENCY_STOP,
+            })
         return super().do_GET()
 
 

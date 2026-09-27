@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Compute Ecosystem — Brand Animation</title>
+<style>
+  /* ============================================================
+     RESET & BASE
+     ============================================================ */
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --qualcomm-red: #C41230;
+    --snapdragon-red: #E4002B;
+    --snapdragon-orange: #FF6B35;
+    --snapdragon-gold: #FFD700;
+    --amd-red: #ED1C24;
+    --dark-bg: #050508;
+    --dark-surface: #0a0a12;
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255,255,255,0.6);
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--dark-bg);
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ============================================================
+     STAGE
+     ============================================================ */
+  #stage {
+    position: fixed; inset: 0;
+    background: var(--dark-bg);
+    overflow: hidden;
+  }
+
+  /* Subtle radial vignette */
+  #stage::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%);
+    pointer-events: none;
+    z-index: 50;
+  }
+
+  /* ============================================================
+     CANVAS LAYERS
+     ============================================================ */
+  canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+  }
+  #canvas-particles { z-index: 2; }
+  #canvas-geometry { z-index: 3; }
+  #canvas-sweep    { z-index: 4; }
+
+  /* ============================================================
+     LOGO CONTAINERS
+     ============================================================ */
+  .logo-phase {
+    position: absolute; inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .logo-phase.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .logo-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .logo-wrap img, .logo-wrap svg {
+    display: block;
+    filter: drop-shadow(0 0 20px rgba(0,0,0,0.5));
+  }
+
+  /* Qualcomm logo sizing */
+  .logo-qualcomm img, .logo-qualcomm svg {
+    width: 340px; height: auto;
+  }
+
+  /* Snapdragon logo sizing */
+  .logo-snapdragon img, .logo-snapdragon svg {
+    width: 220px; height: auto;
+  }
+
+  /* AMD logo sizing */
+  .logo-amd img, .logo-amd svg {
+    width: 300px; height: auto;
+  }
+
+  /* Caption below each logo */
+  .brand-caption {
+    margin-top: 28px;
+    font-size: 13px;
+    font-weight: 300;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .brand-caption.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ============================================================
+     LIGHT SWEEP ELEMENTS
+     ============================================================ */
+  .light-sweep {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 200px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255,255,255,0.03) 20%,
+      rgba(255,255,255,0.08) 50%,
+      rgba(255,255,255,0.03) 80%,
+      transparent 100%
+    );
+    filter: blur(2px);
+    z-index: 5;
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  .light-sweep.qualcomm {
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(196,18,48,0.04) 20%,
+      rgba(196,18,48,0.12) 50%,
+      rgba(196,18,48,0.04) 80%,
+      transparent 100%
+    );
+  }
+
+  .light-sweep.snapdragon {
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(228,0,43,0.06) 25%,
+      rgba(255,107,53,0.15) 50%,
+      rgba(255,215,0,0.06) 75%,
+      transparent 100%
+    );
+    width: 300px;
+  }
+
+  .light-sweep.amd {
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(237,28,36,0.05) 25%,
+      rgba(237,28,36,0.14) 50%,
+      rgba(237,28,36,0.05) 75%,
+      transparent 100%
+    );
+  }
+
+  /* ============================================================
+     ECOSYSTEM FINAL PHASE
+     ============================================================ */
+  #ecosystem {
+    position: absolute; inset: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1.2s ease;
+  }
+  #ecosystem.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .eco-logos {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 80px;
+    margin-bottom: 60px;
+  }
+
+  .eco-logo-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+  .eco-logo-item.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .eco-logo-item img, .eco-logo-item svg {
+    display: block;
+  }
+  .eco-logo-item.qualcomm img, .eco-logo-item.qualcomm svg { width: 160px; height: auto; }
+  .eco-logo-item.snapdragon img, .eco-logo-item.snapdragon svg { width: 100px; height: auto; }
+  .eco-logo-item.amd img, .eco-logo-item.amd svg { width: 160px; height: auto; }
+
+  .eco-label {
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  /* Connecting lines between logos */
+  .eco-connector {
+    position: absolute;
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent,
+      rgba(255,255,255,0.15),
+      rgba(196,18,48,0.3),
+      rgba(228,0,43,0.3),
+      rgba(237,28,36,0.3),
+      rgba(255,255,255,0.15),
+      transparent
+    );
+    z-index: 9;
+    opacity: 0;
+    transition: opacity 1s ease;
+  }
+  .eco-connector.visible { opacity: 1; }
+
+  /* Center title */
+  .eco-title {
+    text-align: center;
+    opacity: 0;
+    transform: translateY(15px);
+    transition: opacity 1s ease, transform 1s ease;
+  }
+  .eco-title.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .eco-title h1 {
+    font-size: 36px;
+    font-weight: 200;
+    letter-spacing: 12px;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+  }
+
+  .eco-title .subtitle {
+    font-size: 13px;
+    font-weight: 300;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  /* ============================================================
+     GEOMETRIC OVERLAYS
+     ============================================================ */
+  .geo-plane {
+    position: absolute;
+    z-index: 6;
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  /* ============================================================
+     PROGRESS BAR
+     ============================================================ */
+  #progress-bar {
+    position: fixed;
+    bottom: 0; left: 0;
+    height: 2px;
+    background: linear-gradient(90deg,
+      var(--qualcomm-red),
+      var(--snapdragon-red),
+      var(--amd-red)
+    );
+    z-index: 100;
+    width: 0%;
+    transition: width 0.1s linear;
+  }
+
+  /* ============================================================
+     PHASE INDICATOR
+     ============================================================ */
+  #phase-label {
+    position: fixed;
+    top: 32px; right: 40px;
+    font-size: 11px;
+    font-weight: 300;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.25);
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  #phase-label.visible { opacity: 1; }
+
+  /* ============================================================
+     FADE OVERLAY
+     ============================================================ */
+  #fade-overlay {
+    position: absolute; inset: 0;
+    background: #000;
+    z-index: 60;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 1.5s ease;
+  }
+  #fade-overlay.clear { opacity: 0; }
+  #fade-overlay.dark { opacity: 1; }
+
+  /* ============================================================
+     KEYFRAME ANIMATIONS
+     ============================================================ */
+
+  /* Logo reveal — scale + fade + subtle rise */
+  @keyframes logoReveal {
+    0%   { opacity: 0; transform: scale(0.92) translateY(12px); filter: blur(8px); }
+    60%  { opacity: 1; filter: blur(0px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); }
+  }
+
+  /* Logo lock — subtle glow pulse */
+  @keyframes logoLock {
+    0%   { filter: drop-shadow(0 0 20px rgba(0,0,0,0.5)); }
+    50%  { filter: drop-shadow(0 0 30px rgba(255,255,255,0.08)); }
+    100% { filter: drop-shadow(0 0 20px rgba(0,0,0,0.5)); }
+  }
+
+  /* Sweep motion */
+  @keyframes sweepRight {
+    0%   { transform: translateX(-300px); opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: 1; }
+    100% { transform: translateX(calc(100vw + 300px)); opacity: 0; }
+  }
+
+  /* Circuit line pulse */
+  @keyframes circuitPulse {
+    0%, 100% { opacity: 0.15; }
+    50%      { opacity: 0.4; }
+  }
+
+  /* Energy arc orbit */
+  @keyframes orbitArc {
+    0%   { transform: rotate(0deg); opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: 1; }
+    100% { transform: rotate(360deg); opacity: 0; }
+  }
+
+  /* Angular geometric sweep */
+  @keyframes angularSweep {
+    0%   { transform: translateX(-100%) skewX(-15deg); opacity: 0; }
+    15%  { opacity: 1; }
+    85%  { opacity: 1; }
+    100% { transform: translateX(100%) skewX(-15deg); opacity: 0; }
+  }
+
+  /* Particle drift */
+  @keyframes particleDrift {
+    0%   { transform: translateY(0) translateX(0); opacity: 0; }
+    10%  { opacity: 0.8; }
+    90%  { opacity: 0.8; }
+    100% { transform: translateY(-40px) translateX(20px); opacity: 0; }
+  }
+
+  /* Gentle float for ecosystem logos */
+  @keyframes gentleFloat {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-4px); }
+  }
+
+  /* Caption pulse */
+  @keyframes captionPulse {
+    0%, 100% { opacity: 0.6; }
+    50%      { opacity: 1; }
+  }
+
+  /* ============================================================
+     CIRCUIT LINES (decorative background)
+     ============================================================ */
+  .circuit-line {
+    position: absolute;
+    background: rgba(196,18,48,0.12);
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 1s ease;
+  }
+  .circuit-line.visible { opacity: 1; }
+  .circuit-line.horizontal {
+    height: 1px;
+    width: 200px;
+    animation: circuitPulse 4s ease-in-out infinite;
+  }
+  .circuit-line.vertical {
+    width: 1px;
+    height: 200px;
+    animation: circuitPulse 4s ease-in-out infinite;
+  }
+
+  /* ============================================================
+     RESPONSIVE
+     ============================================================ */
+  @media (max-width: 900px) {
+    .eco-logos { gap: 40px; }
+    .eco-title h1 { font-size: 24px; letter-spacing: 8px; }
+    .logo-qualcomm img, .logo-qualcomm svg { width: 240px; }
+    .logo-snapdragon img, .logo-snapdragon svg { width: 160px; }
+    .logo-amd img, .logo-amd svg { width: 220px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     STAGE
+     ============================================================ -->
+<div id="stage">
+
+  <!-- Background circuit lines (decorative) -->
+  <div id="circuit-lines"></div>
+
+  <!-- Canvas layers -->
+  <canvas id="canvas-particles"></canvas>
+  <canvas id="canvas-geometry"></canvas>
+  <canvas id="canvas-sweep"></canvas>
+
+  <!-- Light sweeps -->
+  <div class="light-sweep qualcomm" id="sweep-qualcomm"></div>
+  <div class="light-sweep snapdragon" id="sweep-snapdragon"></div>
+  <div class="light-sweep amd" id="sweep-amd"></div>
+
+  <!-- ============================================================
+       PHASE 1: QUALCOMM (0-3s)
+       ============================================================ -->
+  <div class="logo-phase" id="phase-qualcomm">
+    <div class="logo-wrap logo-qualcomm" id="logo-qualcomm">
+      <!-- OFFICIAL QUALCOMM LOGO — SVG asset -->
+      <img src="website/assets/logos/qualcomm.svg" alt="Qualcomm" width="200" height="120">
+    </div>
+    <div class="brand-caption" id="caption-qualcomm">Qualcomm</div>
+  </div>
+
+  <!-- ============================================================
+       PHASE 2: SNAPDRAGON (3-7s)
+       ============================================================ -->
+  <div class="logo-phase" id="phase-snapdragon">
+    <div class="logo-wrap logo-snapdragon" id="logo-snapdragon">
+      <!-- OFFICIAL SNAPDRAGON FIREBALL — SVG asset -->
+      <img src="website/assets/logos/snapdragon.svg" alt="Snapdragon" width="120" height="120">
+    </div>
+    <div class="brand-caption" id="caption-snapdragon">Snapdragon</div>
+  </div>
+
+  <!-- ============================================================
+       PHASE 3: AMD (7-10s)
+       ============================================================ -->
+  <div class="logo-phase" id="phase-amd">
+    <div class="logo-wrap logo-amd" id="logo-amd">
+      <!-- OFFICIAL AMD LOGO — SVG asset -->
+      <img src="website/assets/logos/amd.svg" alt="AMD" width="200" height="120">
+    </div>
+    <div class="brand-caption" id="caption-amd">AMD</div>
+  </div>
+
+  <!-- ============================================================
+       PHASE 4: ECOSYSTEM (10-15s)
+       ============================================================ -->
+  <div id="ecosystem">
+    <div class="eco-logos">
+      <div class="eco-logo-item qualcomm" id="eco-qualcomm">
+        <img src="website/assets/logos/qualcomm.svg" alt="Qualcomm" width="200" height="120">
+        <span class="eco-label">Qualcomm</span>
+      </div>
+      <div class="eco-logo-item snapdragon" id="eco-snapdragon">
+        <img src="website/assets/logos/snapdragon.svg" alt="Snapdragon" width="120" height="120">
+        <span class="eco-label">Snapdragon</span>
+      </div>
+      <div class="eco-logo-item amd" id="eco-amd">
+        <img src="website/assets/logos/amd.svg" alt="AMD" width="200" height="120">
+        <span class="eco-label">AMD</span>
+      </div>
+    </div>
+    <div class="eco-title" id="eco-title">
+      <h1>AI Compute Ecosystem</h1>
+      <div class="subtitle">AI &bull; Compute &bull; Edge &bull; Acceleration</div>
+    </div>
+  </div>
+
+  <!-- Fade overlay -->
+  <div id="fade-overlay"></div>
+
+</div>
+
+<!-- Progress bar -->
+<div id="progress-bar"></div>
+
+<!-- Phase label -->
+<div id="phase-label"></div>
+
+<!-- ============================================================
+     ANIMATION ENGINE
+     ============================================================ -->
+<script>
+(function() {
+  'use strict';
+
+  /* ============================================================
+     TIMING CONSTANTS
+     ============================================================ */
+  const TIMING = {
+    QUALCOMM_START:    0,
+    QUALCOMM_END:      3000,
+    SNAPDRAGON_START:  3000,
+    SNAPDRAGON_END:    7000,
+    AMD_START:         7000,
+    AMD_END:          10000,
+    ECOSYSTEM_START: 10000,
+    ECOSYSTEM_END:   15000,
+    TOTAL_DURATION:  15000,
+  };
+
+  /* ============================================================
+     EASING FUNCTIONS
+     ============================================================ */
+  const Easing = {
+    easeOutCubic:  t => 1 - Math.pow(1 - t, 3),
+    easeInOutCubic:t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2,
+    easeOutQuart:  t => 1 - Math.pow(1-t, 4),
+    easeInOutQuart:t => t < 0.5 ? 8*t*t*t*t : 1 - Math.pow(-2*t+2,4)/2,
+    easeOutExpo:   t => t === 1 ? 1 : 1 - Math.pow(2, -10*t),
+    easeInOutSine: t => -(Math.cos(Math.PI*t) - 1) / 2,
+  };
+
+  const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+  const lerp  = (a, b, t) => a + (b - a) * t;
+
+  /* ============================================================
+     CANVAS SETUP
+     ============================================================ */
+  const canvasParticles  = document.getElementById('canvas-particles');
+  const canvasGeometry   = document.getElementById('canvas-geometry');
+  const canvasSweep      = document.getElementById('canvas-sweep');
+  const ctxP = canvasParticles.getContext('2d');
+  const ctxG = canvasGeometry.getContext('2d');
+  const ctxS = canvasSweep.getContext('2d');
+
+  let W, H, DPR;
+  function resizeCanvases() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    [canvasParticles, canvasGeometry, canvasSweep].forEach(c => {
+      c.width  = W * DPR;
+      c.height = H * DPR;
+      c.style.width  = W + 'px';
+      c.style.height = H + 'px';
+      c.getContext('2d').setTransform(DPR, 0, 0, DPR, 0, 0);
+    });
+  }
+  resizeCanvases();
+  window.addEventListener('resize', resizeCanvases);
+
+  /* ============================================================
+     PARTICLE SYSTEMS
+     ============================================================ */
+
+  // --- Qualcomm: subtle tech particles ---
+  class QualcommParticles {
+    constructor() {
+      this.particles = [];
+      this.gridPoints = [];
+      this.time = 0;
+      this.initGrid();
+    }
+
+    initGrid() {
+      const spacing = 80;
+      for (let x = spacing; x < W; x += spacing) {
+        for (let y = spacing; y < H; y += spacing) {
+          this.gridPoints.push({ x, y, pulse: Math.random() * Math.PI * 2 });
+        }
+      }
+    }
+
+    spawn() {
+      if (this.particles.length < 40 && Math.random() < 0.3) {
+        this.particles.push({
+          x: Math.random() * W,
+          y: H + 10,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: -0.3 - Math.random() * 0.5,
+          size: 0.5 + Math.random() * 1.5,
+          life: 1,
+          decay: 0.002 + Math.random() * 0.003,
+          color: `rgba(196,18,48,`,
+        });
+      }
+    }
+
+    update(dt) {
+      this.time += dt;
+      this.spawn();
+
+      // Update grid pulse
+      this.gridPoints.forEach(g => {
+        g.pulse += dt * 0.5;
+      });
+
+      // Update particles
+      for (let i = this.particles.length - 1; i >= 0; i--) {
+        const p = this.particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.life -= p.decay * dt;
+        if (p.life <= 0) this.particles.splice(i, 1);
+      }
+    }
+
+    draw(ctx) {
+      ctx.clearRect(0, 0, W, H);
+
+      // Draw grid points
+      this.gridPoints.forEach(g => {
+        const alpha = 0.03 + Math.sin(g.pulse) * 0.02;
+        ctx.fillStyle = `rgba(196,18,48,${alpha})`;
+        ctx.beginPath();
+        ctx.arc(g.x, g.y, 1, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // Draw particles
+      this.particles.forEach(p => {
+        ctx.fillStyle = p.color + (p.life * 0.6) + ')';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+  }
+
+  // --- Snapdragon: fire energy particles ---
+  class SnapdragonParticles {
+    constructor() {
+      this.particles = [];
+      this.orbiters = [];
+      this.time = 0;
+    }
+
+    spawnOrbiter(cx, cy, radius, count) {
+      this.orbiters = [];
+      for (let i = 0; i < count; i++) {
+        const angle = (i / count) * Math.PI * 2;
+        this.orbiters.push({
+          cx, cy,
+          radius: radius + (Math.random() - 0.5) * 40,
+          angle,
+          speed: 1.5 + Math.random() * 2,
+          size: 1 + Math.random() * 2.5,
+          trail: [],
+          hue: Math.random() < 0.5 ? '228,0,43' : (Math.random() < 0.5 ? '255,107,53' : '255,215,0'),
+        });
+      }
+    }
+
+    spawnBurst(cx, cy) {
+      for (let i = 0; i < 60; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1 + Math.random() * 4;
+        this.particles.push({
+          x: cx, y: cy,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          size: 0.5 + Math.random() * 2,
+          life: 1,
+          decay: 0.008 + Math.random() * 0.012,
+          hue: Math.random() < 0.6 ? '228,0,43' : '255,107,53',
+        });
+      }
+    }
+
+    update(dt) {
+      this.time += dt;
+
+      // Update orbiters
+      this.orbiters.forEach(o => {
+        o.angle += o.speed * dt * 0.05;
+        o.trail.push({ x: o.cx + Math.cos(o.angle) * o.radius, y: o.cy + Math.sin(o.angle) * o.radius });
+        if (o.trail.length > 30) o.trail.shift();
+      });
+
+      // Update particles
+      for (let i = this.particles.length - 1; i >= 0; i--) {
+        const p = this.particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vx *= 0.99;
+        p.vy *= 0.99;
+        p.life -= p.decay * dt;
+        if (p.life <= 0) this.particles.splice(i, 1);
+      }
+    }
+
+    draw(ctx) {
+      ctx.clearRect(0, 0, W, H);
+
+      // Draw orbiter trails
+      this.orbiters.forEach(o => {
+        if (o.trail.length < 2) return;
+        for (let i = 1; i < o.trail.length; i++) {
+          const alpha = (i / o.trail.length) * 0.5;
+          ctx.strokeStyle = `rgba(${o.hue},${alpha})`;
+          ctx.lineWidth = o.size * (i / o.trail.length);
+          ctx.beginPath();
+          ctx.moveTo(o.trail[i-1].x, o.trail[i-1].y);
+          ctx.lineTo(o.trail[i].x, o.trail[i].y);
+          ctx.stroke();
+        }
+
+        // Draw orbiter head
+        const hx = o.cx + Math.cos(o.angle) * o.radius;
+        const hy = o.cy + Math.sin(o.angle) * o.radius;
+        ctx.fillStyle = `rgba(${o.hue},0.9)`;
+        ctx.beginPath();
+        ctx.arc(hx, hy, o.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Glow
+        const grad = ctx.createRadialGradient(hx, hy, 0, hx, hy, o.size * 4);
+        grad.addColorStop(0, `rgba(${o.hue},0.3)`);
+        grad.addColorStop(1, `rgba(${o.hue},0)`);
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(hx, hy, o.size * 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // Draw particles
+      this.particles.forEach(p => {
+        ctx.fillStyle = `rgba(${p.hue},${p.life * 0.8})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+  }
+
+  // --- AMD: geometric grid particles ---
+  class AMDParticles {
+    constructor() {
+      this.particles = [];
+      this.lines = [];
+      this.time = 0;
+    }
+
+    spawn() {
+      if (this.particles.length < 30 && Math.random() < 0.4) {
+        this.particles.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          vx: (Math.random() - 0.5) * 2,
+          vy: (Math.random() - 0.5) * 2,
+          size: 1 + Math.random() * 2,
+          life: 1,
+          decay: 0.005 + Math.random() * 0.008,
+          side: 10 + Math.random() * 30,
+        });
+      }
+    }
+
+    spawnLines() {
+      // Angular geometric lines
+      for (let i = 0; i < 3; i++) {
+        const horizontal = Math.random() < 0.5;
+        this.lines.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          length: 100 + Math.random() * 300,
+          horizontal,
+          speed: 0.5 + Math.random() * 1.5,
+          life: 1,
+          decay: 0.01 + Math.random() * 0.015,
+          width: 0.5 + Math.random() * 1.5,
+        });
+      }
+    }
+
+    update(dt) {
+      this.time += dt;
+      this.spawn();
+      if (Math.random() < 0.05) this.spawnLines();
+
+      for (let i = this.particles.length - 1; i >= 0; i--) {
+        const p = this.particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.life -= p.decay * dt;
+        if (p.life <= 0) this.particles.splice(i, 1);
+      }
+
+      for (let i = this.lines.length - 1; i >= 0; i--) {
+        const l = this.lines[i];
+        if (l.horizontal) l.x += l.speed * dt;
+        else l.y += l.speed * dt;
+        l.life -= l.decay * dt;
+        if (l.life <= 0) this.lines.splice(i, 1);
+      }
+    }
+
+    draw(ctx) {
+      ctx.clearRect(0, 0, W, H);
+
+      // Draw geometric shapes (squares/rects)
+      this.particles.forEach(p => {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.life * Math.PI * 0.5);
+        ctx.strokeStyle = `rgba(237,28,36,${p.life * 0.4})`;
+        ctx.lineWidth = 0.5;
+        const s = p.side * p.life;
+        ctx.strokeRect(-s/2, -s/2, s, s);
+        ctx.restore();
+      });
+
+      // Draw angular lines
+      this.lines.forEach(l => {
+        ctx.strokeStyle = `rgba(237,28,36,${l.life * 0.3})`;
+        ctx.lineWidth = l.width;
+        ctx.beginPath();
+        if (l.horizontal) {
+          ctx.moveTo(l.x - l.length/2, l.y);
+          ctx.lineTo(l.x + l.length/2, l.y);
+        } else {
+          ctx.moveTo(l.x, l.y - l.length/2);
+          ctx.lineTo(l.x, l.y + l.length/2);
+        }
+        ctx.stroke();
+      });
+    }
+  }
+
+  // --- Ecosystem: connecting data lines ---
+  class EcosystemLines {
+    constructor() {
+      this.lines = [];
+      this.particles = [];
+      this.time = 0;
+      this.logoPositions = [];
+    }
+
+    setLogoPositions(positions) {
+      this.logoPositions = positions;
+    }
+
+    update(dt) {
+      this.time += dt;
+
+      // Spawn data particles along lines
+      if (this.logoPositions.length >= 2 && Math.random() < 0.15) {
+        const idx = Math.floor(Math.random() * (this.logoPositions.length - 1));
+        const from = this.logoPositions[idx];
+        const to = this.logoPositions[idx + 1];
+        if (from && to) {
+          this.particles.push({
+            fromX: from.x, fromY: from.y,
+            toX: to.x, toY: to.y,
+            t: 0,
+            speed: 0.008 + Math.random() * 0.012,
+            size: 1 + Math.random() * 1.5,
+          });
+        }
+      }
+
+      for (let i = this.particles.length - 1; i >= 0; i--) {
+        const p = this.particles[i];
+        p.t += p.speed * dt;
+        if (p.t >= 1) this.particles.splice(i, 1);
+      }
+    }
+
+    draw(ctx) {
+      ctx.clearRect(0, 0, W, H);
+
+      // Draw connecting lines
+      for (let i = 0; i < this.logoPositions.length - 1; i++) {
+        const from = this.logoPositions[i];
+        const to = this.logoPositions[i + 1];
+        if (!from || !to) continue;
+
+        // Thin data line
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 0.5;
+        ctx.setLineDash([4, 8]);
+        ctx.lineDashOffset = -this.time * 20;
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y);
+        ctx.lineTo(to.x, to.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Colored gradient overlay
+        const grad = ctx.createLinearGradient(from.x, from.y, to.x, to.y);
+        grad.addColorStop(0, 'rgba(196,18,48,0.12)');
+        grad.addColorStop(0.5, 'rgba(228,0,43,0.12)');
+        grad.addColorStop(1, 'rgba(237,28,36,0.12)');
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y);
+        ctx.lineTo(to.x, to.y);
+        ctx.stroke();
+      }
+
+      // Draw traveling data particles
+      this.particles.forEach(p => {
+        const x = lerp(p.fromX, p.toX, p.t);
+        const y = lerp(p.fromY, p.toY, p.t);
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.beginPath();
+        ctx.arc(x, y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+  }
+
+  /* ============================================================
+     INITIALIZE SYSTEMS
+     ============================================================ */
+  const qualcommParticles  = new QualcommParticles();
+  const snapdragonParticles = new SnapdragonParticles();
+  const amdParticles       = new AMDParticles();
+  const ecosystemLines     = new EcosystemLines();
+
+  /* ============================================================
+     DOM REFS
+     ============================================================ */
+  const fadeOverlay   = document.getElementById('fade-overlay');
+  const progressBar   = document.getElementById('progress-bar');
+  const phaseLabel    = document.getElementById('phase-label');
+  const circuitLines  = document.getElementById('circuit-lines');
+
+  const phaseQualcomm  = document.getElementById('phase-qualcomm');
+  const phaseSnapdragon = document.getElementById('phase-snapdragon');
+  const phaseAMD        = document.getElementById('phase-amd');
+  const ecosystem       = document.getElementById('ecosystem');
+
+  const captionQualcomm  = document.getElementById('caption-qualcomm');
+  const captionSnapdragon = document.getElementById('caption-snapdragon');
+  const captionAMD        = document.getElementById('caption-amd');
+
+  const ecoQualcomm  = document.getElementById('eco-qualcomm');
+  const ecoSnapdragon = document.getElementById('eco-snapdragon');
+  const ecoAMD        = document.getElementById('eco-amd');
+  const ecoTitle      = document.getElementById('eco-title');
+
+  /* ============================================================
+     DECORATIVE CIRCUIT LINES
+     ============================================================ */
+  function createCircuitLines() {
+    circuitLines.innerHTML = '';
+    for (let i = 0; i < 12; i++) {
+      const line = document.createElement('div');
+      line.className = 'circuit-line ' + (Math.random() < 0.5 ? 'horizontal' : 'vertical');
+      line.style.left = Math.random() * 90 + 5 + '%';
+      line.style.top  = Math.random() * 80 + 10 + '%';
+      line.style.animationDelay = Math.random() * 4 + 's';
+      circuitLines.appendChild(line);
+    }
+    setTimeout(() => {
+      circuitLines.querySelectorAll('.circuit-line').forEach(l => l.classList.add('visible'));
+    }, 500);
+  }
+
+  /* ============================================================
+     PHASE MANAGEMENT
+     ============================================================ */
+  let currentPhase = 'none';
+  let phaseTime = 0;
+
+  function setPhase(phase) {
+    if (currentPhase === phase) return;
+    currentPhase = phase;
+    phaseTime = 0;
+
+    // Hide all phases
+    [phaseQualcomm, phaseSnapdragon, phaseAMD].forEach(p => p.classList.remove('active'));
+    ecosystem.classList.remove('active');
+    captionQualcomm.classList.remove('visible');
+    captionSnapdragon.classList.remove('visible');
+    captionAMD.classList.remove('visible');
+    ecoQualcomm.classList.remove('visible');
+    ecoSnapdragon.classList.remove('visible');
+    ecoAMD.classList.remove('visible');
+    ecoTitle.classList.remove('visible');
+
+    switch(phase) {
+      case 'qualcomm':
+        phaseQualcomm.classList.add('active');
+        phaseLabel.textContent = 'Qualcomm';
+        phaseLabel.classList.add('visible');
+        // Animate logo reveal
+        const qLogo = document.getElementById('logo-qualcomm');
+        qLogo.style.animation = 'none';
+        qLogo.offsetHeight; // force reflow
+        qLogo.style.animation = 'logoReveal 1.2s cubic-bezier(0.16,1,0.3,1) forwards';
+        // Caption after delay
+        setTimeout(() => captionQualcomm.classList.add('visible'), 1000);
+        // Light sweep
+        setTimeout(() => {
+          const sweep = document.getElementById('sweep-qualcomm');
+          sweep.style.animation = 'none';
+          sweep.offsetHeight;
+          sweep.style.animation = 'sweepRight 2s cubic-bezier(0.4,0,0.2,1) forwards';
+        }, 400);
+        break;
+
+      case 'snapdragon':
+        phaseSnapdragon.classList.add('active');
+        phaseLabel.textContent = 'Snapdragon';
+        const sLogo = document.getElementById('logo-snapdragon');
+        sLogo.style.animation = 'none';
+        sLogo.offsetHeight;
+        sLogo.style.animation = 'logoReveal 1s cubic-bezier(0.16,1,0.3,1) forwards';
+        setTimeout(() => captionSnapdragon.classList.add('visible'), 900);
+        // Energy sweep
+        setTimeout(() => {
+          const sweep = document.getElementById('sweep-snapdragon');
+          sweep.style.animation = 'none';
+          sweep.offsetHeight;
+          sweep.style.animation = 'sweepRight 2.5s cubic-bezier(0.4,0,0.2,1) forwards';
+        }, 300);
+        // Spawn orbiters around center
+        setTimeout(() => {
+          snapdragonParticles.spawnOrbiter(W/2, H/2, 120, 12);
+        }, 500);
+        // Burst on reveal
+        setTimeout(() => {
+          snapdragonParticles.spawnBurst(W/2, H/2);
+        }, 1200);
+        break;
+
+      case 'amd':
+        phaseAMD.classList.add('active');
+        phaseLabel.textContent = 'AMD';
+        const aLogo = document.getElementById('logo-amd');
+        aLogo.style.animation = 'none';
+        aLogo.offsetHeight;
+        aLogo.style.animation = 'logoReveal 0.9s cubic-bezier(0.16,1,0.3,1) forwards';
+        setTimeout(() => captionAMD.classList.add('visible'), 800);
+        // Geometric sweep
+        setTimeout(() => {
+          const sweep = document.getElementById('sweep-amd');
+          sweep.style.animation = 'none';
+          sweep.offsetHeight;
+          sweep.style.animation = 'angularSweep 1.5s cubic-bezier(0.4,0,0.2,1) forwards';
+        }, 200);
+        break;
+
+      case 'ecosystem':
+        phaseLabel.textContent = 'AI Compute Ecosystem';
+        ecosystem.classList.add('active');
+        // Stagger logo reveals
+        setTimeout(() => ecoQualcomm.classList.add('visible'), 300);
+        setTimeout(() => ecoSnapdragon.classList.add('visible'), 600);
+        setTimeout(() => ecoAMD.classList.add('visible'), 900);
+        setTimeout(() => ecoTitle.classList.add('visible'), 1400);
+        // Setup ecosystem lines
+        setTimeout(() => {
+          const q = ecoQualcomm.querySelector('img').getBoundingClientRect();
+          const s = ecoSnapdragon.querySelector('img').getBoundingClientRect();
+          const a = ecoAMD.querySelector('img').getBoundingClientRect();
+          ecosystemLines.setLogoPositions([
+            { x: q.right, y: q.top + q.height/2 },
+            { x: s.left,  y: s.top + s.height/2 },
+            { x: s.right, y: s.top + s.height/2 },
+            { x: a.left,  y: a.top + a.height/2 },
+          ]);
+        }, 1200);
+        break;
+
+      case 'fade':
+        fadeOverlay.classList.add('dark');
+        break;
+    }
+  }
+
+  /* ============================================================
+     MAIN LOOP
+     ============================================================ */
+  let lastTime = performance.now();
+  let elapsed = 0;
+
+  function tick(now) {
+    const rawDt = now - lastTime;
+    lastTime = now;
+    const dt = Math.min(rawDt, 50); // cap delta
+    elapsed += rawDt;
+
+    // Update progress bar
+    const progress = (elapsed / TIMING.TOTAL_DURATION) * 100;
+    progressBar.style.width = progress + '%';
+
+    // Phase transitions
+    if (elapsed >= TIMING.ECOSYSTEM_END) {
+      setPhase('fade');
+    } else if (elapsed >= TIMING.ECOSYSTEM_START) {
+      setPhase('ecosystem');
+    } else if (elapsed >= TIMING.AMD_START) {
+      setPhase('amd');
+    } else if (elapsed >= TIMING.SNAPDRAGON_START) {
+      setPhase('snapdragon');
+    } else if (elapsed >= TIMING.QUALCOMM_START) {
+      setPhase('qualcomm');
+    }
+
+    // Clear all canvases
+    ctxP.clearRect(0, 0, W, H);
+    ctxG.clearRect(0, 0, W, H);
+    ctxS.clearRect(0, 0, W, H);
+
+    // --- Qualcomm phase particles ---
+    if (elapsed >= TIMING.QUALCOMM_START && elapsed < TIMING.QUALCOMM_END) {
+      qualcommParticles.update(dt);
+      qualcommParticles.draw(ctxP);
+    }
+
+    // --- Snapdragon phase particles ---
+    if (elapsed >= TIMING.SNAPDRAGON_START && elapsed < TIMING.SNAPDRAGON_END) {
+      snapdragonParticles.update(dt);
+      snapdragonParticles.draw(ctxP);
+    }
+
+    // --- AMD phase particles ---
+    if (elapsed >= TIMING.AMD_START && elapsed < TIMING.AMD_END) {
+      amdParticles.update(dt);
+      amdParticles.draw(ctxP);
+    }
+
+    // --- Ecosystem phase ---
+    if (elapsed >= TIMING.ECOSYSTEM_START && elapsed < TIMING.ECOSYSTEM_END) {
+      ecosystemLines.update(dt);
+      ecosystemLines.draw(ctxG);
+    }
+
+    // --- Ambient particles (always running, very subtle) ---
+    if (elapsed < TIMING.QUALCOMM_END) {
+      // Already handled by qualcomm
+    }
+
+    phaseTime += dt;
+    requestAnimationFrame(tick);
+  }
+
+  /* ============================================================
+     START
+     ============================================================ */
+  function start() {
+    createCircuitLines();
+    // Fade in from black
+    setTimeout(() => fadeOverlay.classList.add('clear'), 100);
+    requestAnimationFrame(tick);
+  }
+
+  // Auto-start
+  start();
+
+})();
+</script>
+</body>
+</html>
